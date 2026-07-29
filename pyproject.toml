@@ -1,0 +1,22 @@
+[project]
+name = "loc-mcp"
+version = "0.1.0"
+description = "MCP server and CLI for searching the Library of Congress JSON API, Chronicling America above all"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.0.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+locgov = "loc_mcp.cli:main"
+loc-mcp = "loc_mcp.server:main"
+loc-mcp-install = "loc_mcp.install:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/loc_mcp"]
