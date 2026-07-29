@@ -40,10 +40,10 @@ def client() -> LocClient:
 
 @mcp.tool()
 async def search_loc(query: str, page: int = 1) -> dict[str, Any]:
-    """Search the Library of Congress historic newspaper full text.
+    """Search the Library of Congress full text.
 
-    Searches the Chronicling America collection: American newspapers, 1736-1963,
-    including a substantial German-language immigrant press.
+    Covers every collection at once: newspapers 1736-1963 in more than a dozen
+    languages, plus digitised books and manuscripts.
 
     Bare words are ANDed and "quoted phrases" match exactly. There is no boolean
     OR and no NOT - those words, a leading minus, parentheses and | are all
@@ -61,11 +61,11 @@ async def search_loc(query: str, page: int = 1) -> dict[str, Any]:
 
 @mcp.tool()
 async def snippets_loc(reference: str, query: str) -> dict[str, Any]:
-    """Show a query in context on one newspaper page.
+    """Show a query in context on one page.
 
     The cheap way to judge a search result without downloading it: returns the
     matched terms in {braces} with the surrounding sentences, and a citation URL.
-    Newspaper pages only - books expose full text but no snippet service.
+    Works for any page-level reference, but not for a whole item.
 
     Args:
         reference: Page reference, as returned by `search_loc`
@@ -98,8 +98,7 @@ def register_advanced_search() -> None:
         query: str = "",
         page: int = 1,
         per_page: int = DEFAULT_PER_PAGE,
-        collection: str = DEFAULT_COLLECTION,
-        all_loc: bool = False,
+        collection: str | None = DEFAULT_COLLECTION,
         level: str = DEFAULT_LEVEL,
         from_year: int | None = None,
         to_year: int | None = None,
@@ -118,9 +117,9 @@ def register_advanced_search() -> None:
             query: Search terms; may be empty when filtering alone
             page: Result page number, 1-indexed
             per_page: Results per request, up to 150
-            collection: Collection slug, default chronicling-america
-            all_loc: Search the whole of loc.gov instead of one collection
-            level: 'page' to resolve hits to newspaper pages, 'item' for items
+            collection: Collection slug to narrow to, e.g. 'chronicling-america'
+                for the newspapers; omit to search all of loc.gov
+            level: 'page' to resolve hits to individual pages, 'item' for items
             from_year: Earliest year, inclusive
             to_year: Latest year, inclusive
             language: Language facet, e.g. 'german'
@@ -134,7 +133,6 @@ def register_advanced_search() -> None:
             page=page,
             per_page=per_page,
             collection=collection,
-            all_loc=all_loc,
             level=level,
             from_year=from_year,
             to_year=to_year,

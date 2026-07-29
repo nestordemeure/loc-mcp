@@ -1,16 +1,28 @@
 ---
 name: loc-search
-description: Search Chronicling America and the wider Library of Congress with the `locgov` CLI. Use for the American press 1736–1963 — including a large German-language immigrant press — and for LoC's digitised books on conjuring and allied subjects.
+description: Search the Library of Congress with the `locgov` CLI — American newspapers 1736–1963 in more than a dozen languages, plus digitised books and manuscripts, all page-level full text through one API. Use for the American reception of a performer, the foreign-language immigrant press, and LoC's conjuring literature.
 ---
 
-# Chronicling America / Library of Congress
+# Library of Congress
 
-The Library of Congress's historic newspaper collection: American papers from **1736 to 1963**, page-level full text, free and keyless. The same CLI reaches the rest of loc.gov, where digitised **books** are full-text indexed too.
+One keyless API over everything LoC has digitised and transcribed: **newspapers 1736–1963**, **digitised books**, and **manuscript collections**, all full-text indexed and all resolvable to the individual page.
 
-Reach for it for the American reception of a performer — the touring circuit, the local notices, the exposure pieces — and as the counterpart to Gallica and ANNO. Two things make it unusually valuable here:
+Reach for it for the American side of a career — the touring circuit, local notices, exposure pieces — and as the counterpart to Gallica and ANNO. Two things make it distinctive:
 
-- **619,712 German-language pages**, concentrated exactly where they are wanted: 103,779 in the 1890s, 128,127 in the 1900s, 177,394 in the 1910s. This is the German-American immigrant press — *Der Deutsche Correspondent* (Baltimore), *Vorwärts* (Milwaukee), *Der Nordstern* (Minnesota), the *Washington Journal* — reporting the same performers the Berlin and Vienna papers did, often reprinting them.
-- **Digitised books** via `--all-loc`, which is where the conjuring literature lives.
+- **It is not only newspapers.** Books and manuscripts sit in the same index and search identically, so the conjuring literature and the personal papers come back alongside the press. Searching them is the default; `--collection` is how you narrow.
+- **It is not only English.** The newspaper corpus is deeply multilingual — the American immigrant press published in more languages than most national archives hold.
+
+## Coverage by language
+
+Pages in the newspaper collection, from its own language facet:
+
+| | | | |
+|---|---|---|---|
+| english 22,499,675 | german 619,712 | spanish 453,914 | polish 169,005 |
+| french 135,671 | yiddish 132,713 | italian 88,547 | czech 58,960 |
+| norwegian 49,635 | serbian 46,789 | | |
+
+All of it is searchable the same way. A performer touring the United States was covered by whichever community turned out to see them, so the Spanish, Polish and Yiddish press are not a footnote — they are often where a notice survives that the English papers did not run. German is merely the largest of them, and its concentration is useful: 103,779 pages in the 1890s, 128,127 in the 1900s, 177,394 in the 1910s.
 
 ## Commands
 
@@ -20,21 +32,23 @@ locgov snippets <reference> "<query>"   # the query in context on that page
 locgov get <reference>                  # OCR text, prints path to the cached file
 ```
 
-Filters for `search`: `--from-year`, `--to-year`, `--language`, `--state`, `--title`, `--collection`, `--all-loc`, `--level`, `--per-page`, `--sort`.
+Filters for `search`: `--from-year`, `--to-year`, `--language`, `--state`, `--title`, `--collection`, `--level`, `--per-page`, `--sort`.
 
 `--sort` takes `relevance` (default), `date_asc` or `date_desc`.
+`--collection chronicling-america` narrows to the newspapers; omit it to search everything.
 
 A **reference** is the loc.gov URL printed with each result. It is simultaneously the citation link, the argument to `snippets` and `get`, and something a human can paste into a browser to see the scan.
 
-**Search resolves to a page, not an issue** — unlike ANNO, there is no issue-to-page step to pay for. A result already says *page 3 of this issue*; `snippets` turns it into *and here is the sentence*:
+**Search resolves to a page, not a document** — for a book and a manuscript exactly as for a newspaper, so there is no document-to-page step to pay for. A result already says *page 25 of this book*; `snippets` turns it into *and here is the sentence*:
 
 ```
-$ locgov snippets 'https://www.loc.gov/resource/sn83045812/1900-09-30/ed-1/?sp=3' 'Gedankenleser'
-# https://www.loc.gov/resource/sn83045812/1900-09-30/ed-1/?sp=3
-  matched: gedankenleſer
-    ... es hören. Ich bin der {Gedankenleſer} Speeles, und eröffne morgen hier einen
-    Cytlus von Vorſtellungen. ...
-        https://www.loc.gov/resource/sn83045812/1900-09-30/ed-1/?sp=3&q=Gedankenleser
+$ locgov snippets 'https://www.loc.gov/resource/gdc.00198495517/?sp=25' 'second sight'
+# https://www.loc.gov/resource/gdc.00198495517/?sp=25
+  matched: second, sight
+    ... among others the experiment called “{Second} {Sight}” Now-a-days we can easily
+    explain this so-called {Second} {Sight}, which in the ‘40's and '50's attracted the
+    attention of the whole civilized world. ...
+        https://www.loc.gov/resource/gdc.00198495517/?sp=25&q=second%20sight
 ```
 
 Matched terms come back in `{braces}`.
@@ -62,7 +76,7 @@ All three of the last rows are the same AND query. A search written as `(Gedanke
 
 loc.gov filters rather than ranks, and its totals are honest — the decade facet counts sum to exactly the reported total (44,089 for `hypnotism`). So:
 
-- **A total can be quoted as a count.** "2,363 pages in Chronicling America carry the phrase Brooklyn Bridge" is a true statement, unlike the equivalent claim on Gallica.
+- **A total can be quoted as a count.** "2,363 pages carry the phrase Brooklyn Bridge" is a true statement, unlike the equivalent claim on Gallica.
 - **`--sort date_asc` is safe on any query.** There is no relevance tail burying the good material.
 - **`--pages all` is meaningful**, subject to cost.
 
@@ -73,20 +87,21 @@ loc.gov filters rather than ranks, and its totals are honest — the decade face
 Narrow before sweeping, with filters that are all verified working:
 
 - `--from-year` / `--to-year` — **note the trap**: the plausible-looking `start_date`/`end_date` parameters that appear in third-party examples are *silently ignored* by loc.gov. This client never sends them; it sends the `dates=YYYY/YYYY` form that works. If you ever hand-build a URL, do the same.
-- `--language german` cuts `Hellseher` from 517 to the German subset; `--state wisconsin` narrows further, and the two intersect.
-- `--title` takes the **exact** title string printed on a result's second line, e.g. `'der deutsche correspondent (baltimore, md.) 1841-1918'`. It cut `Gedankenleser` from 359 to 105.
+- `--language` takes the facet name in English — `german`, `spanish`, `polish`, `yiddish`, `italian`, `czech`, `french`. It intersects with `--state`.
+- `--title` takes the **exact** title string printed on a result's second line, e.g. `'der deutsche correspondent (baltimore, md.) 1841-1918'`. It cut one query from 359 to 105.
+- `--collection chronicling-america` to exclude books and manuscripts; `--level item` to get whole documents rather than pages.
 
 Deep paging works to at least result 20,000; loc.gov's own documentation warns of degradation past 100,000.
 
-## Searching in German
+## Searching in a language other than English
 
-The German-language press is a large fraction of the value here, and it is Fraktur. Search in German: `Gedankenleser`, `Hellseher`, `Telepath`, `Hypnotiseur`, `Wahrsager`, `Zauberkünstler`, `Gedankenübertragung`.
+Search in the language of the paper. The index normalises historical orthography, so **search the modern spelling**: `Gedankenleser` matches the printed `Gedankenleſer`, and you should not search for the ſ form.
 
-**The index folds long ſ to s, so search the modern spelling.** `Gedankenleser` matches the printed `Gedankenleſer`. Do not search for the ſ form.
+Vocabulary is the limiting factor more than syntax. For the German press: `Gedankenleser`, `Hellseher`, `Telepath`, `Hypnotiseur`, `Wahrsager`, `Zauberkünstler`, `Gedankenübertragung`. The same care applies to the Spanish, Polish, Italian and Yiddish press — ask for the period term rather than translating a modern one, and note that Yiddish is indexed in Hebrew script.
 
 ## False positives and lost hits
 
-**The dominant Fraktur failure is k read as t or d.** Observed on a single 1900 page of *Vorwärts*:
+**Fraktur's dominant failure is k read as t or d.** Observed on a single 1900 page of *Vorwärts*:
 
 | OCR | Actual |
 |---|---|
@@ -98,27 +113,27 @@ The German-language press is a large fraction of the value here, and it is Frakt
 | `tieines` | kleines |
 | `Facel` | Fackel |
 
-So **a German term containing `k` is the one most likely to be missed**, and that includes `Zauberkünstler`, `Kartenkunst` and `Okkultismus`. When a German search comes back suspiciously thin, retry with the `k` replaced by `t` (`Cytlus`, `Zaubertünſtler`) before concluding the material is not there.
+So **a German term containing `k` is the one most likely to be missed**, including `Zauberkünstler`, `Kartenkunst` and `Okkultismus`. When a German search comes back suspiciously thin, retry with the `k` replaced by `t` before concluding the material is not there. Expect the analogous problem in any language set in a blackletter or unfamiliar face — this pattern was characterised in German because German is the largest such corpus here, not because it is unique to it.
 
 **f and ſ swap**: `ſühlt` for *fühlt*, `Hilſt` for *hilft*.
 
 **Umlauts are sometimes set as a combining e**: `ungläͤubig` for *ungläubig*, which is neither `ä` nor `ae` and defeats both spellings.
 
-**English-language OCR fails more ordinarily** — broken words, dropped punctuation, `rowpond.-d` for *responded* — but the volume of English text is such that noise, not loss, is the usual problem. Expect a phrase search to be far more useful than an AND search on common words.
+**English-language OCR fails more ordinarily** — broken words, dropped punctuation, `rowpond.-d` for *responded* — but the volume of English text is such that noise, not loss, is the usual problem. A phrase search is far more useful than an AND search on common words.
 
 ## The cached text is normalised; snippets are not
 
 `locgov get` rewrites two things so the file greps the way the index matched:
 
-- **Line-end hyphenation is rejoined.** The break marker is `~`, `—` or `—~`, *not* a plain hyphen — one sampled page had 94 tildes, 13 em dashes and zero hyphens. So `ſchön~\nſten` becomes `schönsten`.
+- **Line-end hyphenation is rejoined.** The break marker is `~`, `—` or `—~`, *not* a plain hyphen — one sampled page of *Vorwärts* had 94 tildes, 13 em dashes and zero hyphens. So `ſchön~\nſten` becomes `schönsten`.
 - **Long ſ is folded to s**, the standard convention for transcribing Fraktur. Before this, `grep Gedankenleser` on a German page returned **nothing** while the page contained seven occurrences.
 
 `snippets` output is **not** normalised — it comes straight from the service and still shows `Gedankenleſer`, because a quoted snippet should read as printed. Quote from snippets; grep the cached file.
 
 ## Traps specific to this source
 
-- **Books have no snippet service.** `--all-loc` reaches digitised books, and they carry full text, but the keyword-in-context endpoint is newspaper-only. `locgov snippets` refuses them with an explanation and costs no request. Use `locgov get` and grep locally — a book's whole transcription arrives as one file, so this is one request rather than one per page.
-- **`get` on a newspaper is one page; `get` on a book is the whole book.** The two shapes of transcription are different services, and the client handles both, but budget accordingly.
+- **Snippets need a page-level reference, not an item.** Any page — newspaper, book or manuscript — has them. A whole item does not, because its transcription is served as one undivided file. `locgov snippets` refuses an item with an explanation and costs no request. Since `--level page` is the default, this only bites if you asked for `--level item`.
+- **`get` follows the same split.** A page reference downloads that one page; an item reference downloads the entire document in a single file. Both are one request, so grabbing a whole book is cheap — but check which you asked for before assuming a 1 KB file means a sparse page.
 - **Unreadable material is filtered out by default.** `search` restricts to items whose text can actually be retrieved, because a hit that cannot be read is of no use. `--include-unreadable` lifts that, and anything unreadable is then flagged in the output.
 - **Its HTML pages are behind an anti-bot wall; the JSON API is not.** A 403 from a normal search means a block, not a bad query — stop rather than retrying.
 - **Truncated and dropped responses happen.** The client retries once and then reports honestly; a persistent failure is a real outage, not something to work around.

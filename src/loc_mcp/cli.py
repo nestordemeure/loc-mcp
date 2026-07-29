@@ -25,6 +25,7 @@ from .client import (
     DEFAULT_SORT,
     LEVELS,
     MAX_PER_PAGE,
+    NEWSPAPER_COLLECTION,
     SORT_ORDERS,
     LocClient,
 )
@@ -127,7 +128,6 @@ async def run_search(args: argparse.Namespace) -> int:
                 page=page,
                 per_page=args.per_page,
                 collection=args.collection,
-                all_loc=args.all_loc,
                 level=args.level,
                 from_year=args.from_year,
                 to_year=args.to_year,
@@ -149,7 +149,7 @@ async def run_search(args: argparse.Namespace) -> int:
                 collected.extend(documents)
             else:
                 label = args.query or "(filters only)"
-                scope = "all of loc.gov" if args.all_loc else args.collection
+                scope = args.collection or "all of loc.gov"
                 print(
                     f"# {label} — {total_results} results in {scope}, "
                     f"page {page} of {total_pages}"
@@ -237,8 +237,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROGRAM_NAME,
         description=(
-            "Search the Library of Congress JSON API, defaulting to the "
-            "Chronicling America historic newspaper collection."
+            "Search the Library of Congress: newspapers, books and manuscripts, "
+            "all full-text indexed through one API."
         ),
     )
     parser.add_argument(
@@ -252,12 +252,13 @@ def build_parser() -> argparse.ArgumentParser:
         "search",
         help="search full text, with optional filters",
         description=(
-            "Search the Library of Congress OCR index. Bare words are ANDed and "
+            "Search the Library of Congress OCR index, across every collection "
+            "unless --collection narrows it. Bare words are ANDed and "
             '"quoted phrases" match exactly. There is NO boolean OR and NO NOT: '
             "the words OR and NOT, a leading -, parentheses and | are all silently "
             "stripped, so each variant of a term needs its own search. Results "
-            "resolve to individual newspaper pages, and the reference printed for "
-            "each is both the citation URL and the argument for 'snippets' and 'get'."
+            "resolve to individual pages, and the reference printed for each is "
+            "both the citation URL and the argument for 'snippets' and 'get'."
         ),
     )
     search.add_argument("query", nargs="?", default="", help="search query (optional if filtering)")
@@ -279,18 +280,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--collection",
         default=DEFAULT_COLLECTION,
         metavar="SLUG",
-        help=f"collection slug to search (default: {DEFAULT_COLLECTION})",
-    )
-    search.add_argument(
-        "--all-loc",
-        action="store_true",
-        help="search the whole of loc.gov rather than one collection",
+        help=(
+            "narrow to one collection, e.g. "
+            f"{NEWSPAPER_COLLECTION} for the newspapers "
+            "(default: all of loc.gov)"
+        ),
     )
     search.add_argument(
         "--level",
         choices=LEVELS,
         default=DEFAULT_LEVEL,
-        help="resolve hits to a newspaper page or to a whole item (default: page)",
+        help=(
+            "resolve hits to an individual page, or to a whole item (default: "
+            "page). Snippets and per-page text need page level"
+        ),
     )
     search.add_argument("--from-year", type=int, metavar="YEAR", help="earliest year, inclusive")
     search.add_argument("--to-year", type=int, metavar="YEAR", help="latest year, inclusive")
@@ -334,8 +337,8 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Show the matched terms on one page in context, with the matches in "
             "{braces} and a citation URL. This is the cheap way to judge a search "
-            "result, and often the whole deliverable. Newspaper pages only: other "
-            "material has full text but no snippet service."
+            "result, and often the whole deliverable. Works for any page-level "
+            "reference — newspaper, book or manuscript — but not for a whole item."
         ),
     )
     snippets.add_argument("reference", help="page reference, as printed by 'locgov search'")
@@ -347,9 +350,10 @@ def build_parser() -> argparse.ArgumentParser:
         "get",
         help="download a page's OCR text, printing the cache path",
         description=(
-            "Download a page's OCR plain text and print the path to the cached "
-            "file. Hyphenation broken across line ends is rejoined, so the cached "
-            "text greps the way the search index matched."
+            "Download OCR plain text and print the path to the cached file. A "
+            "page-level reference yields that one page; an item-level one yields "
+            "the whole item in a single file. Line-end hyphenation is rejoined and "
+            "long s folded, so the text greps the way the search index matched."
         ),
     )
     get.add_argument("reference", help="page reference, as printed by 'locgov search'")

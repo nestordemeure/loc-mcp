@@ -1,6 +1,6 @@
 # Library of Congress MCP Server
 
-CLI and MCP server for the Library of Congress JSON API, defaulting to the Chronicling America collection of historic American newspapers.
+CLI and MCP server for the Library of Congress JSON API: newspapers, books and manuscripts, all full-text indexed and all resolvable to the individual page.
 
 ## Stack
 
@@ -8,10 +8,10 @@ CLI and MCP server for the Library of Congress JSON API, defaulting to the Chron
 
 ## Functionality
 
-- **Page-level full-text search** across Chronicling America, any other loc.gov collection, or the whole site
-- **Filters** for date range, language, US state and newspaper title
-- **Keyword-in-context snippets** for newspaper pages, with citation URLs
-- **OCR text download** with local caching, for newspaper pages and whole books
+- **Page-level full-text search** across the whole of loc.gov, or narrowed to one collection
+- **Filters** for date range, language, US state and title
+- **Keyword-in-context snippets** for any page-level reference, with citation URLs
+- **OCR text download** with local caching, per page or per whole item
 - **Pagination** at up to 150 results per request
 
 ## Structure
@@ -35,7 +35,7 @@ loc-mcp/
 
 ## API Details
 
-**The dedicated `chroniclingamerica.loc.gov` API is gone.** Chronicling America is reachable only as a collection of loc.gov, which is why this client targets the general API and merely defaults to that collection.
+**The dedicated `chroniclingamerica.loc.gov` API is gone.** Chronicling America is reachable only as a collection of loc.gov, so this client targets the general API and treats that collection as one `--collection` value among others rather than special-casing it. The default scope is the whole site.
 
 Three services, all keyless and unauthenticated:
 
@@ -45,7 +45,7 @@ Three services, all keyless and unauthenticated:
 | Resource metadata | the same host with `at=resources` | JSON |
 | Snippets and OCR | `https://tile.loc.gov/text-services/word-coordinates-service` | JSON |
 
-Books and other digitised sets bypass the third: their `fulltext_file` is a direct `.text.txt` URL served as plain text.
+Item-level references bypass the third: their `fulltext_file` is a direct `.text.txt` URL served as plain text, holding the whole document.
 
 ## Search Parameters
 
@@ -88,7 +88,8 @@ The segment memo under `segments/` is safe to cache because the mapping is immut
 - **`start_date` / `end_date` are silently ignored.** They look plausible and appear in third-party examples, but loc.gov honours only `dates=YYYY/YYYY`. A query carrying them returns the *unfiltered* result set with no error — the same class of trap as Gallica's date filter. Verified: `Gedankenleser` with `start_date=1900-01-01&end_date=1901-12-31` returned 359 hits including 1883 and 1946 material; with `dates=1900/1901` it returned 19, all in range.
 - **There is no boolean OR and no NOT.** `OR`, `NOT`, a leading `-`, parentheses and `|` are stripped rather than rejected: `hypnotism doctor`, `hypnotism -doctor` and `hypnotism NOT doctor` all report 18,865. Only implicit AND and `"quoted phrases"` exist. This is documented loudly in the skill because it silently guts any sweep written in the sibling sources' idiom.
 - **`httpx`'s `params` replaces a URL's query string rather than merging into it.** The canonical reference for a newspaper page carries `?sp=N`, which selects the page within the issue; passing `params` alongside it dropped `sp` and resolved every page of an issue to page 1. This produced OCR for the wrong page while looking entirely healthy — the search result was real, the text was real, they just were not the same page. `_resolve_fulltext_url` now merges the existing query explicitly.
-- **`fulltext_file` has two shapes and assuming one misreports the other.** Newspaper pages give a word-coordinates-service URL carrying a `segment=` path, answered as JSON with a `full_text` key. Books give a direct `.text.txt` URL answered as plain text. Parsing only for `segment=` made every book look like it had no OCR at all, which is the opposite of the truth — `05039492` returned 109 KB of text once handled. `_fetch_fulltext` branches on which shape came back.
+- **`fulltext_file` has two shapes and assuming one misreports the other.** The split is by *level*, not by material: a **page-level** reference gives a word-coordinates-service URL carrying a `segment=` path, answered as JSON with a `full_text` key, while an **item-level** one gives a direct `.text.txt` URL answered as plain text. Parsing only for `segment=` made every book look like it had no OCR at all, which is the opposite of the truth — item `05039492` returned 109 KB once handled. `_fetch_fulltext` branches on which shape came back.
+- **Snippets are a page-level capability, not a newspaper one.** An early version of this client refused books outright, on the evidence that item `05039492` had no segment. That was the wrong generalisation: a *page* of a book (`gdc.00198495517/?sp=25`) has a segment and returns perfectly good keyword-in-context. The refusal in `get_snippets` is therefore keyed on the absence of a segment, and says so in terms of level rather than material.
 - **Line-end hyphenation is not marked with a hyphen.** The German Fraktur pages use `~`, `—` or `—~`; one sampled page of *Vorwärts* had 94 tildes, 13 em dashes and **zero** plain hyphens. `_clean_ocr_text` joins all of them when followed by a word character.
 - **The transcription keeps long ſ but the index folds it.** `Gedankenleſer` is what the page holds; `Gedankenleser` is what the index matched. Before folding, a grep for the modern spelling on a page containing seven occurrences returned zero. `_clean_ocr_text` folds ſ→s, which is also standard practice for transcribing Fraktur. **Snippets are deliberately left unfolded**, since a quoted snippet should read as printed.
 - **HTML pages 403; the JSON API does not.** `www.loc.gov` serves its human site behind an anti-bot wall, so fetching a search page as HTML fails while the same URL with `fo=json` succeeds. A 403 from this client therefore means a block rather than a bad query.

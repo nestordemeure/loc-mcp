@@ -52,11 +52,19 @@ DEFAULT_SORT = "relevance"
 DEFAULT_PER_PAGE = 150
 MAX_PER_PAGE = 150
 
-# The collection every search defaults to.
-DEFAULT_COLLECTION = "chronicling-america"
+# Searches cover the whole of loc.gov unless a collection narrows them. There is
+# nothing special about the newspapers: Chronicling America is one collection
+# among many, and `collection="chronicling-america"` is how you ask for it.
+DEFAULT_COLLECTION = None
 
-# Display level. Chronicling America indexes individual newspaper pages, so
-# `page` resolves a hit to the page it sits on rather than to a whole issue.
+# The newspaper collection, named here only because it is the one narrowing that
+# callers reach for often enough to be worth documenting.
+NEWSPAPER_COLLECTION = "chronicling-america"
+
+# Display level. `page` resolves a hit to the individual page it sits on - a
+# newspaper page, a page of a book, a leaf of a manuscript - and is what makes
+# snippets and per-page text available. `item` returns whole items instead, for
+# which there is no snippet service and whose text arrives in one piece.
 LEVELS = ("page", "item")
 DEFAULT_LEVEL = "page"
 
@@ -132,7 +140,6 @@ class LocClient:
         page: int = 1,
         per_page: int = DEFAULT_PER_PAGE,
         collection: str | None = DEFAULT_COLLECTION,
-        all_loc: bool = False,
         level: str = DEFAULT_LEVEL,
         from_year: int | None = None,
         to_year: int | None = None,
@@ -150,9 +157,9 @@ class LocClient:
                 that matters enough to warn about.
             page: Result page number (1-indexed)
             per_page: Results per page, up to MAX_PER_PAGE
-            collection: Collection slug, e.g. `chronicling-america`
-            all_loc: Search the whole of loc.gov instead of one collection
-            level: `page` to resolve hits to newspaper pages, `item` for whole
+            collection: Collection slug to narrow to, e.g. `chronicling-america`
+                for the newspapers. None searches the whole of loc.gov.
+            level: `page` to resolve hits to individual pages, `item` for whole
                 items
             from_year: Earliest year, inclusive
             to_year: Latest year, inclusive
@@ -175,7 +182,7 @@ class LocClient:
         if level not in LEVELS:
             raise ValueError(f"level must be one of {', '.join(LEVELS)}, got {level!r}")
 
-        url = self._scope_url(collection=collection, all_loc=all_loc)
+        url = self._scope_url(collection=collection)
         params = self._build_search_params(
             query=query,
             page=page,
@@ -193,15 +200,13 @@ class LocClient:
         payload = await self._get_json(url, params)
         return self._parse_search_response(payload, per_page=per_page)
 
-    def _scope_url(self, collection: str | None, all_loc: bool) -> str:
+    def _scope_url(self, collection: str | None) -> str:
         """Resolve the search scope to a URL.
 
         Site-wide search lives at /search/; a collection at /collections/<slug>/.
         """
-        if all_loc:
-            return f"{self.SEARCH_HOST}/search/"
         if not collection:
-            raise ValueError("either a collection or all_loc must be given")
+            return f"{self.SEARCH_HOST}/search/"
         slug = collection.strip().strip("/")
         return f"{self.SEARCH_HOST}/collections/{slug}/"
 
@@ -369,13 +374,14 @@ class LocClient:
             raise RuntimeError(
                 f"{self.canonical_reference(reference)} has no snippet service.\n"
                 "\n"
-                "Snippets come from the newspaper text service, which is keyed by "
-                "an internal page segment. Digitised books and other sets instead "
-                "expose their whole transcription as one plain-text file, with no "
-                "keyword-in-context endpoint over it.\n"
+                "Snippets are keyed by an internal page segment, so they exist for "
+                "page-level references - a newspaper page, a page of a book, a leaf "
+                "of a manuscript alike - but not for a whole item, whose "
+                "transcription is served as one undivided file.\n"
                 "\n"
-                "This is not an error in your query: use `locgov get` on this same "
-                "reference to download the full text, then grep it locally."
+                "This is not an error in your query. Either search with level="
+                "'page' so results carry a page reference, or use `locgov get` on "
+                "this item to download its full text and grep it locally."
             )
 
         url = self._text_service_url(segment, mode="snippet", query=query)
@@ -419,11 +425,11 @@ class LocClient:
     async def _fetch_fulltext(self, fulltext_url: str, canonical: str) -> str:
         """Retrieve a transcription, in whichever of the two shapes it takes.
 
-        Newspaper pages are served by the word-coordinates text service, which
-        answers JSON keyed by segment path. Digitised books and similar sets
-        instead point straight at a `.text.txt` file holding the whole item.
-        Assuming the first shape reports a book as having no OCR at all, which is
-        the opposite of the truth.
+        Page-level references are served by the word-coordinates text service,
+        which answers JSON keyed by segment path and yields that one page.
+        Item-level references instead point straight at a `.text.txt` file
+        holding the item entire. Assuming the first shape reports a book as
+        having no OCR at all, which is the opposite of the truth.
         """
         segment = self._segment_from_word_coordinates(fulltext_url)
 
