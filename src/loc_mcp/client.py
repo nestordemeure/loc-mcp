@@ -148,6 +148,7 @@ class LocClient:
         title: str | None = None,
         original_format: str | None = None,
         contributor: str | None = None,
+        subject: str | None = None,
         sort: str = DEFAULT_SORT,
         readable_only: bool = True,
     ) -> dict[str, Any]:
@@ -172,6 +173,9 @@ class LocClient:
                 `periodical`, `manuscript/mixed material`
             contributor: Contributor facet value, e.g.
                 `harry houdini collection (library of congress)`
+            subject: Subject-heading facet value, e.g. `magic tricks`. A
+                property of the parent record, so it selects books and
+                excludes newspapers entirely
             sort: One of SORT_ORDERS (default relevance)
             readable_only: Restrict to material whose text can actually be
                 retrieved. On by default: a hit we cannot read is of no use.
@@ -201,6 +205,7 @@ class LocClient:
             title=title,
             original_format=original_format,
             contributor=contributor,
+            subject=subject,
             sort=sort,
             readable_only=readable_only,
         )
@@ -231,6 +236,7 @@ class LocClient:
         title: str | None,
         original_format: str | None,
         contributor: str | None,
+        subject: str | None,
         sort: str,
         readable_only: bool,
     ) -> list[tuple[str, str]]:
@@ -268,6 +274,8 @@ class LocClient:
             facets.append(f"original-format:{original_format.strip().lower()}")
         if contributor:
             facets.append(f"contributor:{contributor.strip().lower()}")
+        if subject:
+            facets.append(f"subject:{subject.strip().lower()}")
         if readable_only:
             facets.append(READABLE_FACET)
         if facets:
@@ -359,6 +367,11 @@ class LocClient:
             "page_number": _strip_leading_zeros(_first(item.get("number_page"))),
             "languages": _as_list(item.get("language")),
             "states": _as_list(item.get("location_state")),
+            # Subject headings belong to the *parent record*, so they describe
+            # the book on a book and the newspaper title on a newspaper page.
+            # Surfaced because that is exactly what makes `subject` worth
+            # filtering on for one and useless for the other.
+            "subjects": _as_list(item.get("subject")),
             "online_formats": _as_list(item.get("online_format")),
             "access_restricted": bool(item.get("access_restricted")),
             "segment": segment,

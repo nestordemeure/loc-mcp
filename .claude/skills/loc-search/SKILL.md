@@ -44,7 +44,7 @@ locgov snippets <reference> "<query>"   # the query in context on that page
 locgov get <reference>                  # OCR text, prints path to the cached file
 ```
 
-Filters for `search`: `--from-year`, `--to-year`, `--language`, `--state`, `--title`, `--format`, `--contributor`, `--collection`, `--level`, `--per-page`, `--sort`.
+Filters for `search`: `--from-year`, `--to-year`, `--language`, `--state`, `--title`, `--format`, `--contributor`, `--subject`, `--collection`, `--level`, `--per-page`, `--sort`.
 
 `--sort` takes `relevance` (default), `date_asc` or `date_desc`.
 `--collection chronicling-america` narrows to the newspapers; omit it to search everything.
@@ -105,6 +105,7 @@ Narrow before sweeping, with filters that are all verified working:
 - `--title` takes the **exact** title string printed on a result's second line, e.g. `'der deutsche correspondent (baltimore, md.) 1841-1918'`. It cut one query from 359 to 105.
 - `--format` takes the material type — `newspaper`, `book`, `periodical`, `manuscript/mixed material`. Separating books from newspapers matters more here than it sounds; see below.
 - `--contributor` takes a contributor facet verbatim, which is how LoC's named collections are reached.
+- `--subject` takes a Library of Congress subject heading — **books only, see below**.
 - `--collection chronicling-america` to exclude books and manuscripts; `--level item` to get whole documents rather than pages.
 
 **A misspelled facet value returns 0, not the unfiltered set.** `--format xqzptvw` and `--contributor 'not a real contributor'` both return zero rather than quietly dropping the filter, so a facet typo fails loudly. This is the opposite of the `start_date` trap, and it means a surprising 0 is worth double-checking against the bare facet before you believe it.
@@ -177,6 +178,29 @@ The tell, once you know it: **consecutive `sp=` numbers from one item.** Real pr
 - **Dealer advertising is bound into the back of magic books** — *Some modern conjuring* ends with Mysto Manufacturing and W. G. Edwards, "dealers in High Class Magical Apparatus". Noise for a performer search; primary evidence for a question about apparatus and the trade.
 - **Manuscript items are containers, not documents.** `prestidigitation --level item` returns *Walt Whitman Papers … Literary File, 1841-1919* — a folder, matched somewhere inside. The same fan-out applies: `clairvoyance` and `Houdini` each report exactly 2,675 pages from contributor `hockley, frederick`, which is one metadata match spread across a whole run.
 - **Book OCR is cleaner than newspaper OCR in the body and worse at the edges.** Set text transcribes well; endpapers, plates and copyright stamps produce pages of noise. A hit that snippets renders as line noise is a scanned blank, not a bad query. (One 1909 English book sampled — weakly established.)
+
+### `--subject` is a books instrument, and returns zero on newspapers
+
+Subject headings belong to the **parent catalogue record**, not to the page — the same mechanism as the metadata fan-out above. What that record *is* decides whether the headings are worth anything:
+
+| Material | What the headings describe | Example, on a `prestidigitation` hit |
+|---|---|---|
+| book | the book's content | `magic tricks`, `handbooks, manuals, etc`, `spiritualism, parapsychology` |
+| newspaper | the *newspaper title* | `newspapers`, `united states`, `charlotte amalie`, `saint thomas` … |
+| periodical | the run, broadly | `periodicals`, `united states`, `20th century` |
+| manuscript | the containing collection | `american literature`, `whitman, walt,. leaves of grass` |
+
+So on books it is excellent and on everything else it is place-and-genre noise. Verified: `prestidigitation --subject 'magic tricks'` returns **772**, and every one of them is a book — adding `--format newspaper` to that query returns **0**, not an error.
+
+**That zero is the trap.** A valid heading combined with newspapers looks exactly like "this material does not exist". Never put `--subject` in a press sweep.
+
+Where it earns its place is assembling a bibliography:
+
+```sh
+locgov search 'prestidigitation' --subject 'magic tricks' --level item
+```
+
+**You do not have to guess the headings.** Non-newspaper results print a `subjects:` line — that is where `magic tricks` and `spiritualism, parapsychology` above came from — so run the search unfiltered first, read the headings off the results, then filter by one. They are printed only for non-newspaper material, because a newspaper page inherits a dozen place names from its title and they would bury the result; `--json` still carries them for everything.
 
 **`--title` works here too, and gives you a free control.** It takes the `partof_title` facet, which bound periodical runs carry exactly as newspapers do: `--title "conjurers' monthly magazine (new york) 1906-1908"` with no query returns **420 pages** of Houdini's own magazine. The same title with `'"second sight"'` returns 0 — and because the bare facet is proven to return 420, that 0 is a real absence rather than a mistyped filter. **Verify a facet value with an empty query before reading anything into a zero.**
 

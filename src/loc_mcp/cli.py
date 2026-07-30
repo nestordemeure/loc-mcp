@@ -101,6 +101,13 @@ def format_document(position: int, document: dict[str, Any]) -> str:
     if descriptors:
         lines.append(f"    {' · '.join(descriptors)}")
 
+    # Only for non-newspaper material. A newspaper page inherits its title's
+    # headings - a dozen place names and the word "newspapers" - which would
+    # bury the result line. On a book they are the topical headings, and they
+    # are what `--subject` takes, so showing them teaches the filter.
+    if not document.get("newspaper") and (subjects := document.get("subjects")):
+        lines.append(f"    subjects: {', '.join(subjects[:6])}")
+
     warnings: list[str] = []
     if document.get("access_restricted"):
         warnings.append("ACCESS RESTRICTED")
@@ -136,6 +143,7 @@ async def run_search(args: argparse.Namespace) -> int:
                 title=args.title,
                 original_format=args.format,
                 contributor=args.contributor,
+                subject=args.subject,
                 sort=args.sort,
                 readable_only=not args.include_unreadable,
             )
@@ -331,6 +339,15 @@ def build_parser() -> argparse.ArgumentParser:
             "'harry houdini collection (library of congress)'. This is how the "
             "named LoC collections are reached - they are contributors, not "
             "digital collections"
+        ),
+    )
+    search.add_argument(
+        "--subject",
+        metavar="HEADING",
+        help=(
+            "subject heading, e.g. 'magic tricks'. Belongs to the parent "
+            "catalogue record, so it selects books and returns ZERO "
+            "newspapers - do not combine it with a press sweep"
         ),
     )
     search.add_argument(

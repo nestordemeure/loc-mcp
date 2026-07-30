@@ -107,6 +107,7 @@ def register_advanced_search() -> None:
         title: str | None = None,
         original_format: str | None = None,
         contributor: str | None = None,
+        subject: str | None = None,
         sort: str = DEFAULT_SORT,
         include_unreadable: bool = False,
     ) -> dict[str, Any]:
@@ -133,6 +134,9 @@ def register_advanced_search() -> None:
             contributor: Contributor facet, e.g. 'harry houdini collection
                 (library of congress)' - the named LoC collections are
                 contributors rather than digital collections
+            subject: Subject heading, e.g. 'magic tricks'. Belongs to the
+                parent record, so it selects books and returns zero
+                newspapers - never combine it with a newspaper sweep
             sort: 'relevance', 'date_asc' or 'date_desc'
             include_unreadable: Also return material with no retrievable text
         """
@@ -149,6 +153,7 @@ def register_advanced_search() -> None:
             title=title,
             original_format=original_format,
             contributor=contributor,
+            subject=subject,
             sort=sort,
             readable_only=not include_unreadable,
         )
