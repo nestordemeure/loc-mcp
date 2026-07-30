@@ -9,7 +9,7 @@ CLI and MCP server for the Library of Congress JSON API: newspapers, books and m
 ## Functionality
 
 - **Page-level full-text search** across the whole of loc.gov, or narrowed to one collection
-- **Filters** for date range, language, US state and title
+- **Filters** for date range, language, US state, title, material format and contributor
 - **Keyword-in-context snippets** for any page-level reference, with citation URLs
 - **OCR text download** with local caching, per page or per whole item
 - **Pagination** at up to 150 results per request
@@ -96,4 +96,6 @@ The segment memo under `segments/` is safe to cache because the mapping is immut
 - **Truncated bodies and dropped connections both occur.** A 200 carrying JSON that stops mid-string was seen twice, and a transport error once, during development. `_get_json` retries once on either and then reports honestly rather than raising a traceback.
 - **`at=` is worth using on every request.** A five-result search returns 1.9 MB unrestricted and 23 KB with `at=results,pagination,search`, because the unrestricted response carries every facet and the whole collection description.
 - **Result pages past the end are a clean 404**, and deep paging works to at least result 20,000.
+- **An unrecognised facet value returns 0 rather than being dropped.** `original-format:xqzptvw` and a nonsense `contributor:` both come back empty rather than unfiltered, so facet typos fail loudly. Worth knowing because `start_date` fails the other way, and the two behaviours sit in the same query string.
+- **A page-level search matches item metadata and fans it out over every page.** `Houdini` in `selected-digitized-books` reports 112,647 pages, whose earliest results are pages 1-6 of an 1813 book with no occurrence of the word - it sits in the Harry Houdini Collection, and the provenance matched. `--level item` collapses the same query to 567. So the "totals are true counts" property above holds for newspapers and **not** for long-form material.
 - **`uv tool install --force .` can install a stale wheel** when the version has not changed. Use `uv tool install --force --reinstall .` after editing.

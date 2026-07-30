@@ -44,7 +44,7 @@ locgov snippets <reference> "<query>"   # the query in context on that page
 locgov get <reference>                  # OCR text, prints path to the cached file
 ```
 
-Filters for `search`: `--from-year`, `--to-year`, `--language`, `--state`, `--title`, `--collection`, `--level`, `--per-page`, `--sort`.
+Filters for `search`: `--from-year`, `--to-year`, `--language`, `--state`, `--title`, `--format`, `--contributor`, `--collection`, `--level`, `--per-page`, `--sort`.
 
 `--sort` takes `relevance` (default), `date_asc` or `date_desc`.
 `--collection chronicling-america` narrows to the newspapers; omit it to search everything.
@@ -103,13 +103,17 @@ Narrow before sweeping, with filters that are all verified working:
 - `--from-year` / `--to-year` — **note the trap**: the plausible-looking `start_date`/`end_date` parameters that appear in third-party examples are *silently ignored* by loc.gov. This client never sends them; it sends the `dates=YYYY/YYYY` form that works. If you ever hand-build a URL, do the same.
 - `--language` takes the facet name in English — `german`, `spanish`, `polish`, `yiddish`, `italian`, `czech`, `french`. It intersects with `--state`.
 - `--title` takes the **exact** title string printed on a result's second line, e.g. `'der deutsche correspondent (baltimore, md.) 1841-1918'`. It cut one query from 359 to 105.
+- `--format` takes the material type — `newspaper`, `book`, `periodical`, `manuscript/mixed material`. Separating books from newspapers matters more here than it sounds; see below.
+- `--contributor` takes a contributor facet verbatim, which is how LoC's named collections are reached.
 - `--collection chronicling-america` to exclude books and manuscripts; `--level item` to get whole documents rather than pages.
+
+**A misspelled facet value returns 0, not the unfiltered set.** `--format xqzptvw` and `--contributor 'not a real contributor'` both return zero rather than quietly dropping the filter, so a facet typo fails loudly. This is the opposite of the `start_date` trap, and it means a surprising 0 is worth double-checking against the bare facet before you believe it.
 
 Deep paging works to at least result 20,000; loc.gov's own documentation warns of degradation past 100,000.
 
 ## Books, periodicals and manuscripts
 
-They are searched by default, and for this field they are not the minor half of the source. Page counts read from the API's format facet — **the CLI has no format filter**, so treat these as orientation for where to look rather than as something to reproduce:
+They are searched by default, and for this field they are not the minor half of the source. Page counts via `--format`:
 
 | Term | total | newspaper | book | periodical | manuscript |
 |---|---|---|---|---|---|
@@ -126,7 +130,13 @@ They are searched by default, and for this field they are not the minor half of 
 
 **`--collection selected-digitized-books` is the narrowing to reach for**, and it covers bound periodical runs as well as books: `prestidigitation` returns 1,070 pages there.
 
-**The two conjuring collections are not collections.** LoC's *Harry Houdini Collection* and *McManus-Young Collection* supply much of this material — 718 and 672 pages respectively of the 2,611 for `prestidigitation` — but they are `contributor` facet values, with no digital collection and no CLI flag. Reach their contents through `selected-digitized-books` and the subject terms, not by naming them.
+**The two conjuring collections are not collections — they are contributors.** LoC's *Harry Houdini Collection* and *McManus-Young Collection* supply much of this material, 718 and 672 pages respectively of the 2,611 for `prestidigitation`, but there is no `/collections/harry-houdini-collection/` to narrow to. Reach them with `--contributor`:
+
+```sh
+locgov search 'prestidigitation' --contributor 'harry houdini collection (library of congress)'
+```
+
+The value must be verbatim, lowercase, parenthetical suffix included. That query returns 718 pages — Houdini's own library, which is as close to a curated conjuring collection as this source has.
 
 ### The metadata trap — read this before quoting any book count
 
@@ -199,6 +209,8 @@ Query it in Hebrew script. It is a first-class subset, not a broken one:
 - `טעאטער` returns **24,610** pages, while the Hebrew-script nonsense control `קשזחטפצ` returns 0 — so the match is literal and the corpus is genuinely indexed.
 - `snippets` returns Hebrew-script keyword-in-context, right to left, with `{braces}` intact.
 - `get` returns clean UTF-8 Yiddish; one sampled page held 26,106 Hebrew characters.
+- **Phrase search works in Hebrew script.** `טעאטער ניו` as bare words returns 20,464; `"טעאטער ניו"` quoted returns 66. The quotes bite exactly as they do in Latin script.
+- **Final and medial forms are distinct — they do not fold.** `און` returns 132,385 and `אונ` 71,756, so a word spelled with the wrong form is a different query. Unlike vowel points, which do fold, letter forms must be right.
 
 **Transliteration does not work.** `teater` inside the Yiddish subset returns 18 hits against 24,610 for the Hebrew-script form, and `snippets` on the best of them reports *no occurrences* — the Latin-script trickle is the English matter these papers also carry, since they are catalogued `yiddish, english`, not romanised Yiddish. Compose the query in Hebrew script or do not search Yiddish at all.
 
@@ -241,7 +253,11 @@ So the practical rule is a **fallback, not a first move**: search the correct sp
 | `פּאבי?יק` | פּאבליק |
 | `האָטע?` | האָטעל |
 
-This one is not a rare defect. `אוז`, the corrupt form of *un* ("and"), appears on **129,741 of the 132,713 Yiddish pages** — 98% — and is indexed as its own token, so nothing folds it back to `און` (132,385). Verified in context: a snippet reading `סיטי {אוז} קאנטרי`, "city *un* country". **A Yiddish term ending in a final letter, or containing `ל`, is the one most likely to be missed**, and a `?` inside a Yiddish OCR word almost always stands for `ל`.
+This one is not a rare defect. `אוז`, the corrupt form of *un* ("and"), appears on **129,741 of the 132,713 Yiddish pages** — 98% — and is indexed as its own token, so nothing folds it back to `און` (132,385). Verified in context: a snippet reading `סיטי {אוז} קאנטרי`, "city *un* country".
+
+Confirmed on a second title a decade earlier — *Yidishes ṭageblaṭṭ*, 1919-11-07 p.7 — which carried 39 Hebrew words containing `?` (`האבע?`, `זא?`, `וויי?`, `ל?עבען`) and ran `און` 121 against `אוז` 18. So the rate is roughly 13–19% on the commonest word in the language, across two papers thirty years apart.
+
+**A Yiddish term ending in a final letter, or containing `ל`, is the one most likely to be missed**, and a `?` inside a Yiddish OCR word almost always stands for `ל`.
 
 *Polish* — **c read as o**: `leoz` for *lecz*, `jeszoze` for *jeszcze*, `szozyt` for *szczyt*, `ekstatyoznyoh` for *ekstatycznych*, `pomooą` for *pomocą*. Separately `ń` becomes `ó`: `łaóouch` for *łańcuch*. The other Polish diacritics survive well.
 

@@ -146,6 +146,8 @@ class LocClient:
         language: str | None = None,
         state: str | None = None,
         title: str | None = None,
+        original_format: str | None = None,
+        contributor: str | None = None,
         sort: str = DEFAULT_SORT,
         readable_only: bool = True,
     ) -> dict[str, Any]:
@@ -166,6 +168,10 @@ class LocClient:
             language: Language facet value, e.g. `german`
             state: US state facet value, e.g. `wisconsin`
             title: Exact `partof_title` facet value, as printed in results
+            original_format: Material type, e.g. `newspaper`, `book`,
+                `periodical`, `manuscript/mixed material`
+            contributor: Contributor facet value, e.g.
+                `harry houdini collection (library of congress)`
             sort: One of SORT_ORDERS (default relevance)
             readable_only: Restrict to material whose text can actually be
                 retrieved. On by default: a hit we cannot read is of no use.
@@ -193,6 +199,8 @@ class LocClient:
             language=language,
             state=state,
             title=title,
+            original_format=original_format,
+            contributor=contributor,
             sort=sort,
             readable_only=readable_only,
         )
@@ -221,6 +229,8 @@ class LocClient:
         language: str | None,
         state: str | None,
         title: str | None,
+        original_format: str | None,
+        contributor: str | None,
         sort: str,
         readable_only: bool,
     ) -> list[tuple[str, str]]:
@@ -254,6 +264,10 @@ class LocClient:
             facets.append(f"location_state:{state.strip().lower()}")
         if title:
             facets.append(f"partof_title:{title.strip().lower()}")
+        if original_format:
+            facets.append(f"original-format:{original_format.strip().lower()}")
+        if contributor:
+            facets.append(f"contributor:{contributor.strip().lower()}")
         if readable_only:
             facets.append(READABLE_FACET)
         if facets:

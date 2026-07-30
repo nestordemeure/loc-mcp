@@ -134,6 +134,8 @@ async def run_search(args: argparse.Namespace) -> int:
                 language=args.language,
                 state=args.state,
                 title=args.title,
+                original_format=args.format,
+                contributor=args.contributor,
                 sort=args.sort,
                 readable_only=not args.include_unreadable,
             )
@@ -309,6 +311,26 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "exact newspaper title facet, copied verbatim from a result's "
             "newspaper line, e.g. 'the scranton tribune (scranton, pa.) 1891-1910'"
+        ),
+    )
+    search.add_argument(
+        "--format",
+        metavar="TYPE",
+        dest="format",
+        help=(
+            "material type, e.g. newspaper, book, periodical, "
+            "'manuscript/mixed material'. Books and newspapers behave "
+            "differently enough that separating them is often the point"
+        ),
+    )
+    search.add_argument(
+        "--contributor",
+        metavar="NAME",
+        help=(
+            "contributor facet, copied verbatim, e.g. "
+            "'harry houdini collection (library of congress)'. This is how the "
+            "named LoC collections are reached - they are contributors, not "
+            "digital collections"
         ),
     )
     search.add_argument(

@@ -105,6 +105,8 @@ def register_advanced_search() -> None:
         language: str | None = None,
         state: str | None = None,
         title: str | None = None,
+        original_format: str | None = None,
+        contributor: str | None = None,
         sort: str = DEFAULT_SORT,
         include_unreadable: bool = False,
     ) -> dict[str, Any]:
@@ -125,6 +127,12 @@ def register_advanced_search() -> None:
             language: Language facet, e.g. 'german'
             state: US state of publication, e.g. 'wisconsin'
             title: Exact newspaper title facet, copied from a result
+            original_format: Material type, e.g. 'newspaper', 'book',
+                'periodical'. Books fan metadata matches across every page of
+                an item, so separating them from newspapers matters
+            contributor: Contributor facet, e.g. 'harry houdini collection
+                (library of congress)' - the named LoC collections are
+                contributors rather than digital collections
             sort: 'relevance', 'date_asc' or 'date_desc'
             include_unreadable: Also return material with no retrievable text
         """
@@ -139,6 +147,8 @@ def register_advanced_search() -> None:
             language=language,
             state=state,
             title=title,
+            original_format=original_format,
+            contributor=contributor,
             sort=sort,
             readable_only=not include_unreadable,
         )
