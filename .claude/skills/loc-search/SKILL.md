@@ -101,7 +101,7 @@ Vocabulary is the limiting factor more than syntax. For the German press: `Gedan
 
 ## False positives and lost hits
 
-**Fraktur's dominant failure is k read as t or d.** Observed on a single 1900 page of *Vorwärts*:
+**Fraktur's characteristic failure is k read as t or d** — but it is sporadic, and how sporadic matters as much as the pattern itself. Observed on a 1900 page of *Vorwärts*:
 
 | OCR | Actual |
 |---|---|
@@ -113,11 +113,23 @@ Vocabulary is the limiting factor more than syntax. For the German press: `Gedan
 | `tieines` | kleines |
 | `Facel` | Fackel |
 
-So **a German term containing `k` is the one most likely to be missed**, including `Zauberkünstler`, `Kartenkunst` and `Okkultismus`. When a German search comes back suspiciously thin, retry with the `k` replaced by `t` before concluding the material is not there. Expect the analogous problem in any language set in a blackletter or unfamiliar face — this pattern was characterised in German because German is the largest such corpus here, not because it is unique to it.
+**It is not confined to that page or that title** — `das {Tleine} Fahrzeug` for *das kleine Fahrzeug* turns up in *Die Helden von Tsingtau* (1915), a different title fifteen years later, so the pattern is a property of the corpus rather than of one bad scan.
+
+**But it is nothing like universal, and you should not assume your k-word is broken.** In that same Tsingtau snippet, `Kommandant` and `Kapitänleutnant` both render their k correctly. Three American German-language papers sampled across 1894–1897 — *Abendblatt* (Chicago), *Washington Journal*, *Freie Presse für Texas* — returned 35 correct spellings of common k-words and no misreads at all, including `Zauberkunststückchen` with all three k's intact. The substitution tracks scan and typeface quality, not the language.
+
+So the practical rule is a **fallback, not a first move**: search the correct spelling first, and only when a German search comes back suspiciously thin retry with `k` replaced by `t` — for `Zauberkünstler`, `Kartenkunst`, `Okkultismus` and the like. Expect the analogous problem in any language set in a blackletter or unfamiliar face; this was characterised in German because German is the largest such corpus here, not because it is unique to it.
+
+**You cannot measure how common a misread is by comparing result counts**, because of the diacritic folding described below. `tönnen` reports 139,320 hits, which looks like overwhelming evidence for `können` being mangled — and is nothing of the kind. They are occurrences of *Tonnen*, "tons".
 
 **f and ſ swap**: `ſühlt` for *fühlt*, `Hilſt` for *hilft*.
 
 **Umlauts are sometimes set as a combining e**: `ungläͤubig` for *ungläubig*, which is neither `ä` nor `ae` and defeats both spellings.
+
+**The search folds diacritics, and this cuts both ways.** `schon` and `schön` return an identical 589,247 results; so do `tonnen`, `Tonnen` and `tönnen` at 139,320. Matching is also case-insensitive. The index is not fuzzy in general — a nonsense control like `xqzptvw` returns 0, so it does match literally — it simply strips accents from both query and text.
+
+The good half: **OCR that loses an umlaut costs you nothing.** `Gedankenübertragung` will still find a page where the scan dropped the diaeresis, and you do not need to search `ue` spellings separately.
+
+The bad half, and it is a real trap: **an accented word and its unaccented homograph are the same query.** You cannot tell them apart, cannot count them separately, and cannot use result totals to compare spelling variants — any inference of the form "variant A has more hits than variant B, so A is the common spelling" is invalid whenever an accent is the only difference. This is what makes the `tönnen`/*Tonnen* collision above so misleading. Expect the same collision in Spanish and Polish.
 
 **English-language OCR fails more ordinarily** — broken words, dropped punctuation, `rowpond.-d` for *responded* — but the volume of English text is such that noise, not loss, is the usual problem. A phrase search is far more useful than an AND search on common words.
 
