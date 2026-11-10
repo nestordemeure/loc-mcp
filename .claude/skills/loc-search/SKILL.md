@@ -1,13 +1,13 @@
 ---
 name: loc-search
-description: Search the Library of Congress with the `locgov` CLI — American newspapers from 1736 to 1963 in more than twelve languages, plus digitised books and manuscripts, all with page-level full text through one API. Use it for the American reception of a performer, the foreign-language immigrant press, and the conjuring literature of the Library.
+description: Search the Library of Congress with the `locgov` CLI: American newspapers from 1736 to 1963 in more than twelve languages, plus digitised books and manuscripts, all with page-level full text through one API. Use it for the American reception of a performer, the foreign-language immigrant press, and the conjuring literature of the Library.
 ---
 
 # Library of Congress
 
 One API with no key over each item that the Library of Congress digitised and transcribed: **newspapers from 1736 to 1963**, **digitised books**, and **manuscript collections**. Each item has a full-text index, and each item resolves to the individual page.
 
-Use it for the American part of a career — the tour circuit, local notices, and articles that explain methods. It is the counterpart to Gallica and ANNO. Two properties make it different:
+Use it for the American part of a career: the tour circuit, local notices, and articles that explain methods. It is the counterpart to Gallica and ANNO. Two properties make it different:
 
 - **It is not only newspapers.** The books and the manuscripts are in the same index, and they search in the same way. Thus the conjuring literature and the personal papers come back together with the press. A search of everything is the default, and `--collection` is how you make the search narrow.
 - **It is not only English.** The newspaper corpus holds many languages. The American immigrant press published in more languages than most national archives hold.
@@ -65,7 +65,7 @@ $ locgov snippets 'https://www.loc.gov/resource/gdc.00198495517/?sp=25' 'second 
 
 The matched terms come back in `{braces}`.
 
-## Query syntax — read this before you plan a search
+## Query syntax: read this before you plan a search
 
 The tool joins bare words with **AND**. `"quoted phrases"` match exactly.
 
@@ -100,12 +100,12 @@ loc.gov filters the results. It does not rank them. Its totals are honest: the d
 
 Make the query narrow before you collect the results. The tests confirm each filter below:
 
-- `--from-year` and `--to-year` — **note the risk**: the credible `start_date` and `end_date` parameters that appear in third-party examples are *silently ignored* by loc.gov. This client never sends them. It sends the `dates=YYYY/YYYY` form, which loc.gov accepts. If you ever build a URL by hand, do the same.
-- `--language` takes the facet name in English — `german`, `spanish`, `polish`, `yiddish`, `italian`, `czech`, `french`. It intersects with `--state`.
+- `--from-year` and `--to-year`: **note the risk**: the credible `start_date` and `end_date` parameters that appear in third-party examples are *silently ignored* by loc.gov. This client never sends them. It sends the `dates=YYYY/YYYY` form, which loc.gov accepts. If you ever build a URL by hand, do the same.
+- `--language` takes the facet name in English: `german`, `spanish`, `polish`, `yiddish`, `italian`, `czech`, `french`. It intersects with `--state`.
 - `--title` takes the **exact** title string that the second line of a result prints, for example `'der deutsche correspondent (baltimore, md.) 1841-1918'`. It reduced one query from 359 to 105.
-- `--format` takes the material type — `newspaper`, `book`, `periodical`, `manuscript/mixed material`. To separate the books from the newspapers is more important here than it sounds. See below.
+- `--format` takes the material type: `newspaper`, `book`, `periodical`, `manuscript/mixed material`. To separate the books from the newspapers is more important here than it sounds. See below.
 - `--contributor` takes a contributor facet exactly. This is how you reach the named collections of the Library.
-- `--subject` takes a Library of Congress subject heading — **books only, see below**.
+- `--subject` takes a Library of Congress subject heading, **for books only, see below**.
 - `--collection chronicling-america` excludes the books and the manuscripts. `--level item` gives full documents in place of pages.
 
 **A facet value with an incorrect spelling gives 0. It does not give the unfiltered set.** `--format xqzptvw` and `--contributor 'not a real contributor'` both give zero. The server does not remove the filter without a message, so a spelling error in a facet fails loudly. This is the opposite of the `start_date` risk. Thus, when a zero surprises you, compare it against the bare facet before you believe it.
@@ -131,7 +131,7 @@ A search includes them by default, and for this subject they are not the smaller
 
 **`--collection selected-digitized-books` is the limit to use**, and it covers bound periodical runs as well as books: `prestidigitation` gives 1,070 pages there.
 
-**The two conjuring collections are not collections. They are contributors.** The *Harry Houdini Collection* and the *McManus-Young Collection* of the Library give much of this material — 718 pages and 672 pages of the 2,611 for `prestidigitation` — but there is no `/collections/harry-houdini-collection/` to limit the search to. Reach them with `--contributor`:
+**The two conjuring collections are not collections. They are contributors.** The *Harry Houdini Collection* and the *McManus-Young Collection* of the Library give much of this material (718 pages and 672 pages of the 2,611 for `prestidigitation`), but there is no `/collections/harry-houdini-collection/` to limit the search to. Reach them with `--contributor`:
 
 ```sh
 locgov search 'prestidigitation' --contributor 'harry houdini collection (library of congress)'
@@ -139,7 +139,7 @@ locgov search 'prestidigitation' --contributor 'harry houdini collection (librar
 
 The value must be exact and lowercase, and it must include the text in parentheses. That query gives 718 pages, which is the library of Houdini himself. It is the nearest thing to a curated conjuring collection that this source has.
 
-### The metadata risk — read this before you give any count of books
+### The metadata risk: read this before you give any count of books
 
 **On a long document, a page-level search matches the *metadata* of the item as well as its text. It then reports that one match one time for each page.** This is the defining hazard here, and the output does not show it.
 
@@ -165,13 +165,13 @@ The signal, when you know it: **consecutive `sp=` numbers from one item.** Real 
 | Metadata repetition | multiplied by the page count | one result for each document |
 | Good for | *where in this book* | *what does LoC hold on this* |
 
-`prestidigitation` is 2,611 pages against 1,662 items. Use **item** first for each name that is also a collection, a contributor or a subject heading — that is, each performer whose papers the Library holds. Use **page** when the term is distinctive enough that a result is probably a match in the text, and when you need something to cite.
+`prestidigitation` is 2,611 pages against 1,662 items. Use **item** first for each name that is also a collection, a contributor or a subject heading, that is, each performer whose papers the Library holds. Use **page** when the term is distinctive enough that a result is probably a match in the text, and when you need something to cite.
 
 **`get` on an item reference downloads a full book in one request.** *Some modern conjuring* came back as 145 KB and 25,000 words. You can then use grep locally at no cost, and you avoid the metadata risk completely. The price is this: **the item text has no page boundaries.** There are no form feeds and no image markers. You will find the passage and you will not be able to cite its position. When the citation is important, find the page with a page-level search and quote from `snippets`. When you only decide if a book is worth a reading, take the item and use grep.
 
 ### Risks specific to long documents
 
-- **A set of several volumes loses its title.** A page of Ponsin appears as `Image 27 of Volume 1`, and the identity of the book survives only in the URL slug — `gdcmassbookdig.nouvellemagiebla00pons_0`. Read the slug, not the title line.
+- **A set of several volumes loses its title.** A page of Ponsin appears as `Image 27 of Volume 1`, and the identity of the book survives only in the URL slug: `gdcmassbookdig.nouvellemagiebla00pons_0`. Read the slug, not the title line.
 - **`p. N` is the image number, not the printed page number.** The title field says this directly: `Image 51 of …`. The front matter and the plates make the two numbers different, so cite the URL and let the researcher read the folio number from the scan.
 - **A periodical volume frequently has no date**, shown as `n.d.` `Image 603 of v. 45` of *Bernarr Macfadden's Joyous Life* carries no date. Any `--from-year` or `--to-year` filter removes these items with no message, so also do a search with no date limits before you conclude that a run is absent.
 - **An index, a catalogue and a dictionary give citation matches only.** `prestidigitation` matches page 274 of *Webster's handy-condensed dictionary*, and at item level it gives *Bibliotheca Lindesiana … Catalogue of the printed books*. The books give far more of these matches than the newspapers do.
@@ -254,9 +254,9 @@ Write the query in Hebrew script. This is a first-class subset, not a broken one
 
 **This is not limited to that page or that title.** `das {Tleine} Fahrzeug` for *das kleine Fahrzeug* appears in *Die Helden von Tsingtau* (1915), a different title fifteen years later. Thus the pattern is a property of the corpus, not of one bad scan.
 
-**But it is not universal, and you must not assume that your k-word is incorrect in the index.** In that same Tsingtau snippet, `Kommandant` and `Kapitänleutnant` both hold their k correctly. Three American German-language papers sampled across 1894–1897 — *Abendblatt* (Chicago), *Washington Journal* and *Freie Presse für Texas* — gave 35 correct spellings of common k-words and no incorrect ones, including `Zauberkunststückchen` with all three k characters intact. The substitution follows the quality of the scan and the typeface, not the language.
+**But it is not universal, and you must not assume that your k-word is incorrect in the index.** In that same Tsingtau snippet, `Kommandant` and `Kapitänleutnant` both hold their k correctly. Three American German-language papers sampled across 1894–1897 (*Abendblatt* of Chicago, *Washington Journal* and *Freie Presse für Texas*) gave 35 correct spellings of common k-words and no incorrect ones, including `Zauberkunststückchen` with all three k characters intact. The substitution follows the quality of the scan and the typeface, not the language.
 
-Thus the practical rule is a **second attempt, not a first move**. Search the correct spelling first. Only when a German search gives very few results, search again with `t` in place of `k` — for `Zauberkünstler`, `Kartenkunst`, `Okkultismus` and similar words. Expect the same problem in each language set in a blackletter face or an unfamiliar face. The tests measured this in German because German is the largest such corpus here, not because it is unique to German.
+Thus the practical rule is a **second attempt, not a first move**. Search the correct spelling first. Only when a German search gives very few results, search again with `t` in place of `k`, for `Zauberkünstler`, `Kartenkunst`, `Okkultismus` and similar words. Expect the same problem in each language set in a blackletter face or an unfamiliar face. The tests measured this in German because German is the largest such corpus here, not because it is unique to German.
 
 **You cannot measure how frequent an OCR error is by a comparison of result counts**, because of the fold of the diacritics in the previous section. `tönnen` reports 139,320 results, which looks like strong evidence that the OCR damages `können`. It is not. They are occurrences of *Tonnen*, "tons".
 
@@ -266,7 +266,7 @@ Thus the practical rule is a **second attempt, not a first move**. Search the co
 
 **Outside German the dominant confusion is different for each language.** The tests measured each one from one sampled page.
 
-*Yiddish* — the final letters break, and `ל` becomes `?` (*Der Morgen zshurnal*, 1929-03-31 p.8):
+*Yiddish*: the final letters break, and `ל` becomes `?` (*Der Morgen zshurnal*, 1929-03-31 p.8):
 
 | OCR | Actual |
 |---|---|
@@ -277,23 +277,23 @@ Thus the practical rule is a **second attempt, not a first move**. Search the co
 | `פּאבי?יק` | פּאבליק |
 | `האָטע?` | האָטעל |
 
-This defect is not rare. `אוז`, the corrupt form of *un* ("and"), appears on **129,741 of the 132,713 Yiddish pages** — 98% — and the index holds it as its own token. Thus nothing folds it back to `און` (132,385). Confirmed in context: one snippet reads `סיטי {אוז} קאנטרי`, "city *un* country".
+This defect is not rare. `אוז`, the corrupt form of *un* ("and"), appears on **129,741 of the 132,713 Yiddish pages** (98%), and the index holds it as its own token. Thus nothing folds it back to `און` (132,385). Confirmed in context: one snippet reads `סיטי {אוז} קאנטרי`, "city *un* country".
 
-Confirmed on a second title ten years earlier — *Yidishes ṭageblaṭṭ*, 1919-11-07 p.7 — which carried 39 Hebrew words that hold `?` (`האבע?`, `זא?`, `וויי?`, `ל?עבען`) and gave `און` 121 times against `אוז` 18 times. Thus the rate is approximately 13–19% on the most common word in the language, across two papers thirty years apart.
+Confirmed on a second title ten years earlier, *Yidishes ṭageblaṭṭ* of 1919-11-07 p.7, which carried 39 Hebrew words that hold `?` (`האבע?`, `זא?`, `וויי?`, `ל?עבען`) and gave `און` 121 times against `אוז` 18 times. Thus the rate is approximately 13–19% on the most common word in the language, across two papers thirty years apart.
 
 **A Yiddish term that ends with a final letter, or that holds `ל`, is the term that the index most probably loses.** A `?` inside a Yiddish OCR word almost always stands for `ל`.
 
-*Polish* — **c reads as o**: `leoz` for *lecz*, `jeszoze` for *jeszcze*, `szozyt` for *szczyt*, `ekstatyoznyoh` for *ekstatycznych*, and `pomooą` for *pomocą*. Separately, `ń` becomes `ó`: `łaóouch` for *łańcuch*. The other Polish diacritics survive well.
+*Polish*: **c reads as o**: `leoz` for *lecz*, `jeszoze` for *jeszcze*, `szozyt` for *szczyt*, `ekstatyoznyoh` for *ekstatycznych*, and `pomooą` for *pomocą*. Separately, `ń` becomes `ó`: `łaóouch` for *łańcuch*. The other Polish diacritics survive well.
 
-*Spanish* — **n reads as u**: `uua` for *una*, `uu` for *un*, `reclansaudo` for *reclamando*, and `inaudado` for *mandado*. Also `easo` for *caso*, and `cea` for *sea*.
+*Spanish*: **n reads as u**: `uua` for *una*, `uu` for *un*, `reclansaudo` for *reclamando*, and `inaudado` for *mandado*. Also `easo` for *caso*, and `cea` for *sea*.
 
-*Italian* — **i, l and the digit 1 become one character**: `11` for *il* (eight times against 32 correct on one page), `I!` and `II` for *Il*, `Instltute` for *Institute*, and `migliala` for *migliaia*.
+*Italian*: **i, l and the digit 1 become one character**: `11` for *il* (eight times against 32 correct on one page), `I!` and `II` for *Il*, `Instltute` for *Institute*, and `migliala` for *migliaia*.
 
 **The papers in Latin script lose the hyphen at the end of a line completely, and the index loses both halves of the word.** This is the largest single cause of lost results outside German, and its effect is different from Fraktur. The sampled Spanish, Polish and Italian pages carried **zero** `~`, `—` or `-` markers at the end of a line. The OCR simply divides the word with no marker, so `get` has nothing to join. One Spanish page had 449 such breaks: `sá`/`bados`, `convencio`/`nales`, `aten`/`ción`, and `hip`/`notista`.
 
 The tests proved this against the index, and did not infer it. `snippets` on that page for `sábados convencionales atención` matched **only** `atención`. The index could not find the two words that are clearly present but divided. Thus **the index loses a long word more frequently than a short word**, and a small result for `prestidigitador` is partly a consequence of its length. When a search in these languages gives very few results, try a shorter distinctive stem, or a short word that occurs with it, before you conclude that the material is absent.
 
-**English-language OCR fails in more ordinary ways** — broken words, lost punctuation, and `rowpond.-d` for *responded*. But the quantity of English text is large, so the usual problem is too many results, not lost results. A phrase search has much more value than an AND search on common words.
+**English-language OCR fails in more ordinary ways**: broken words, lost punctuation, and `rowpond.-d` for *responded*. But the quantity of English text is large, so the usual problem is too many results, not lost results. A phrase search has much more value than an AND search on common words.
 
 ## The cached text is normalised, and the snippets are not
 
@@ -306,7 +306,7 @@ The output of `snippets` is **not** normalised. It comes directly from the servi
 
 ## Risks specific to this source
 
-- **Snippets need a page-level reference, not an item.** Each page — newspaper, book or manuscript — has them. A full item does not, because the service sends its transcription as one file with no divisions. `locgov snippets` refuses an item with an explanation, and it costs no request. `--level page` is the default, so this only affects you when you asked for `--level item`.
+- **Snippets need a page-level reference, not an item.** Each page (newspaper, book or manuscript) has them. A full item does not, because the service sends its transcription as one file with no divisions. `locgov snippets` refuses an item with an explanation, and it costs no request. `--level page` is the default, so this only affects you when you asked for `--level item`.
 - **`get` follows the same division.** A page reference downloads that one page. An item reference downloads the full document in one file. Both are one request, so a full book has a low cost. But examine which one you asked for before you conclude that a file of 1 KB means a page with little text.
 - **The tool excludes unreadable material by default.** `search` limits the results to items whose text the client can receive, because a result that you cannot read has no use. `--include-unreadable` removes that limit, and the output then marks each unreadable item.
 - **Stop after an HTTP 403 from a normal search. Do not send the request again.** The HTML pages are behind an anti-bot wall, and the JSON API is not. A 403 means a block, not a bad query.
