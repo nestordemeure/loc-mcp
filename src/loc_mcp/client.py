@@ -24,6 +24,7 @@ import asyncio
 import hashlib
 import json
 import re
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, quote, urlparse, urlunparse
@@ -746,13 +747,55 @@ class LocClient:
             )
 
     async def _rate_limited_get(self, url: str, **kwargs: Any) -> httpx.Response:
-        """Issue a GET request honoring concurrency and rate limits."""
-        async with self._request_semaphore:
-            await self._rate_limiter.acquire()
-            return await self.client.get(url, **kwargs)
+        """Issue a GET request honoring concurrency and rate limits.
+
+        loc.gov sometimes answers one 503 between normal answers, and
+        sometimes many in a row: six of eight searches in one session, and a
+        retry some minutes later worked. Thus a 5xx is retried one time after
+        `RETRY_5XX_SECONDS`; a second one pauses loc.gov for every process for
+        `OUTAGE_SECONDS`.
+        """
+        outage = self.cache_dir / ".unavailable"
+        try:
+            since = float(outage.read_text())
+        except (OSError, ValueError):
+            since = 0.0
+        if time.time() - since < OUTAGE_SECONDS:
+            raise ServiceUnavailable(_outage_message(since, sent=False))
+        for attempt in (1, 2):
+            async with self._request_semaphore:
+                await self._rate_limiter.acquire()
+                response = await self.client.get(url, **kwargs)
+            if response.status_code not in (500, 502, 503, 504) or attempt == 2:
+                break
+            await asyncio.sleep(RETRY_5XX_SECONDS)
+        if response.status_code in (500, 502, 503, 504):
+            outage.write_text(repr(time.time()))
+            raise ServiceUnavailable(_outage_message(time.time(), sent=True, status=response.status_code))
+        return response
 
 
 # ------------------------------------------------------------------ helpers
+
+RETRY_5XX_SECONDS = 10
+OUTAGE_SECONDS = 300
+
+
+class ServiceUnavailable(RuntimeError):
+    """loc.gov answered with a server error; the client pauses all requests."""
+
+
+def _outage_message(since: float, sent: bool, status: int | None = None) -> str:
+    resume = time.strftime("%H:%M", time.localtime(since + OUTAGE_SECONDS))
+    first = (
+        f"loc.gov is unavailable (HTTP {status} two times). This is a failure of the Library's servers, not of the query."
+        if sent
+        else f"loc.gov is unavailable since an HTTP 5xx at {time.strftime('%H:%M', time.localtime(since))}; no request sent."
+    )
+    return (
+        f"{first} All locgov commands stop until {resume}. Stop the batch now and do not run its other queries; "
+        "work on other sources, then try one query after that time."
+    )
 
 
 def _first(value: Any) -> Any:

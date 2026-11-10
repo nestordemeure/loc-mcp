@@ -28,6 +28,7 @@ from .client import (
     NEWSPAPER_COLLECTION,
     SORT_ORDERS,
     LocClient,
+    ServiceUnavailable,
 )
 from .paths import cache_dir
 
@@ -413,6 +414,9 @@ def main() -> None:
         exit_code = asyncio.run(args.handler(args))
     except KeyboardInterrupt:
         exit_code = 130
+    except ServiceUnavailable as error:
+        print(f"STOPPED: {PROGRAM_NAME}: {error}", file=sys.stderr)
+        exit_code = 4
     except (RuntimeError, ValueError) as error:
         print(f"{PROGRAM_NAME}: {error}", file=sys.stderr)
         exit_code = 1

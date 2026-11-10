@@ -311,6 +311,7 @@ The output of `snippets` is **not** normalised. It comes directly from the servi
 - **The tool excludes unreadable material by default.** `search` limits the results to items whose text the client can receive, because a result that you cannot read has no use. `--include-unreadable` removes that limit, and the output then marks each unreadable item.
 - **Stop after an HTTP 403 from a normal search. Do not send the request again.** The HTML pages are behind an anti-bot wall, and the JSON API is not. A 403 means a block, not a bad query.
 - **Truncated responses and lost responses both occur.** The client tries one more time, and then reports honestly. A failure that continues is a real outage. Do not try to work around it.
+- **HTTP 503 occurs, sometimes alone and sometimes many times in a row.** The client tries again one time after 10 seconds. After a second 5xx it stops all `locgov` commands, in all processes, for 5 minutes, prints a line that starts with `STOPPED:`, and exits with code 4. During that pause a command sends no request. Stop the batch at the first exit code 4, work on other sources, and try one query after the time in the message.
 
 ## Cost
 
